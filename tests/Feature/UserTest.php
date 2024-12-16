@@ -21,6 +21,7 @@ describe('User Registration | /api/v1/register', function () {
         $response
             ->assertStatus(201)
             ->assertJson([
+                'message' => 'User registered Successfully.',
                 'data' => [
                     'id' => 1,
                     'name' => 'user test',
