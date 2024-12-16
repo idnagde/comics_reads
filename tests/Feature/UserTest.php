@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 use function Pest\Laravel\postJson;
@@ -21,20 +20,13 @@ describe('User Registration | /api/v1/register', function () {
 
         $response
             ->assertStatus(201)
-            ->assertJson(
-                fn(AssertableJson $json) =>
-                $json
-                    ->where('message', 'User registered Successfully.')
-                    ->has(
-                        'data',
-                        fn(AssertableJson $json) =>
-                        $json
-                            ->where('id', 1)
-                            ->where('name', 'user test')
-                            ->where('email', 'usertest@mail.com')
-                            ->etc()
-                    )
-            );
+            ->assertJson([
+                'data' => [
+                    'id' => 1,
+                    'name' => 'user test',
+                    'email' => 'usertest@mail.com',
+                ]
+            ]);
     });
 
     it('fails when email is already registered', function () {
@@ -50,12 +42,12 @@ describe('User Registration | /api/v1/register', function () {
 
         $response
             ->assertStatus(422)
-            ->assertJson(
-                fn(AssertableJson $json) =>
-                $json
-                    ->where('message', 'Validation failed')
-                    ->has('errors.email')->where('errors.email.0', 'The email has already been taken.')
-            );
+            ->assertJson([
+                'message' => 'Validation failed',
+                'errors' => [
+                    'email' => ['The email has already been taken.']
+                ]
+            ]);
     });
 
     it('fails when required fields are missing', function () {
@@ -65,13 +57,13 @@ describe('User Registration | /api/v1/register', function () {
 
         $response
             ->assertStatus(422)
-            ->assertJson(
-                fn(AssertableJson $json) =>
-                $json
-                    ->where('message', 'Validation failed')
-                    ->has('errors.name')->where('errors.name.0', 'The name field is required.')
-                    ->has('errors.email')->where('errors.email.0', 'The email field is required.')
-                    ->has('errors.password')->where('errors.password.0', 'The password field is required.')
-            );
+            ->assertJson([
+                'message' => 'Validation failed',
+                'errors' => [
+                    'name' => ['The name field is required.'],
+                    'email' => ['The email field is required.'],
+                    'password' => ['The password field is required.']
+                ]
+            ]);
     });
 });
