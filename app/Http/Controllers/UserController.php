@@ -7,6 +7,7 @@ use App\Http\Requests\UserRegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -48,5 +49,23 @@ class UserController extends Controller
                 'accessToken' => $token
             ]
         ]);
+    }
+
+    public function index(Request $request)
+    {
+        $search = $request->query('search');
+        $per_page = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+
+        $users = User::when($search, function ($query, $search) {
+            $query
+                ->where('name', 'like', "%{$search}")
+                ->orWhere('email', 'like', "%{$search}");
+        })
+            ->orderBy('created_at', 'desc')
+            ->paginate($per_page, ['*'], 'page', $page);
+
+        return UserResource::collection($users)
+            ->additional(['message' => 'Users fetched successfully.']);
     }
 }

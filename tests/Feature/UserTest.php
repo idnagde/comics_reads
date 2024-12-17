@@ -4,6 +4,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 
+use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
@@ -126,5 +127,35 @@ describe('User Login | /api/v1/login', function () {
                     'credential' => 'Invalid credentials'
                 ]
             ]);
+    });
+});
+
+describe('User List | /api/v1/users', function () {
+    it('should return paginated user list', function () {
+        User::factory(15)->create();
+
+        $response = getJson('/api/v1/users');
+
+        $response
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'data' => [
+                    '*' => ['id', 'name', 'email', 'created_at']
+                ],
+                'links',
+                'meta'
+            ])
+            ->assertJsonPath('meta.total', 15);
+    });
+
+    it('should filter users by search query', function () {
+        User::factory()->create(['name' => 'user test alpha']);
+        User::factory()->create(['name' => 'user test beta']);
+
+        $response = getJson('/api/v1/users?search=alpha');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'user test alpha');
     });
 });
