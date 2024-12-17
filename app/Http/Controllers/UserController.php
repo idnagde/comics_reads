@@ -51,7 +51,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
         $per_page = $request->query('per_page', 10);
@@ -65,7 +65,13 @@ class UserController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($per_page, ['*'], 'page', $page);
 
-        return UserResource::collection($users)
-            ->additional(['message' => 'Users fetched successfully.']);
+        $result = UserResource::collection($users)->response()->getData();
+
+        return response()->json([
+            'message' => 'Users fetched successfully.',
+            'data' => $result->data,
+            'links' => $result->links,
+            'meta' => $result->meta,
+        ]);
     }
 }
