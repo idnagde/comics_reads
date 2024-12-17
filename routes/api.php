@@ -13,3 +13,4 @@ Route::get('/', function () {
 });
 
 Route::post('/v1/register', [UserController::class, 'register']);
+Route::post('/v1/login', [UserController::class, 'login']);

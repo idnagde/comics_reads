@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 use function Pest\Laravel\postJson;
 
@@ -9,7 +10,7 @@ uses(RefreshDatabase::class);
 
 describe('User Registration | /api/v1/register', function () {
 
-    it('succeeds with valid data', function () {
+    it('should successfully register a user with valid data', function () {
         $data = [
             'name' =>  'user test',
             'email' => 'usertest@mail.com',
@@ -26,11 +27,12 @@ describe('User Registration | /api/v1/register', function () {
                     'id' => 1,
                     'name' => 'user test',
                     'email' => 'usertest@mail.com',
+                    'created_at' => true,
                 ]
             ]);
     });
 
-    it('fails when email is already registered', function () {
+    it('should fail to register a user when the email is already taken', function () {
         $data = [
             'name' =>  'user test',
             'email' => 'usertest@mail.com',
@@ -51,7 +53,7 @@ describe('User Registration | /api/v1/register', function () {
             ]);
     });
 
-    it('fails when required fields are missing', function () {
+    it('should fail to register a user when required fields are missing', function () {
         $data = [];
 
         $response = postJson('/api/v1/register', $data);
@@ -64,6 +66,64 @@ describe('User Registration | /api/v1/register', function () {
                     'name' => ['The name field is required.'],
                     'email' => ['The email field is required.'],
                     'password' => ['The password field is required.']
+                ]
+            ]);
+    });
+});
+
+
+describe('User Login | /api/v1/login', function () {
+    $register = [
+        'name' => 'user test',
+        'email' => 'usertest@mail.com',
+        'password' => 'password123'
+    ];
+
+    beforeEach(function () use (&$register) {
+        $user = $register;
+        $user['password'] = Hash::make($user['password']);
+        User::create($user);
+    });
+
+
+    it('should successfully log in a user with valid credentials', function () use (&$register) {
+        $login = [
+            'email' => $register['email'],
+            'password' => $register['password']
+        ];
+
+        $response = postJson('/api/v1/login', $login);
+
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'message' => 'Login successful.',
+                'data' => [
+                    'user' => [
+                        'id' => 1,
+                        'name' => $register['name'],
+                        'email' => $register['email'],
+                        'created_at' => true
+                    ],
+                    'accessToken' => true
+                ]
+            ]);
+    });
+
+    it('should fail to log in a user with invalid credentials', function () use ($register) {
+        $login = [
+            'email' => $register['email'],
+            'password' => 'wrongpassword'
+        ];
+
+        $response = postJson('/api/v1/login', $login);
+
+        $response
+            ->assertStatus(401)
+            ->assertJson([
+                'message' => 'Login failed.',
+                'errors' => [
+                    'credential' => 'Invalid credentials'
                 ]
             ]);
     });

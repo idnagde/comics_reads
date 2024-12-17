@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -21,5 +22,31 @@ class UserController extends Controller
             'message' => 'User registered Successfully.',
             'data' => new UserResource($user)
         ], 201);
+    }
+
+    public function login(UserLoginRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+
+        $user = User::where('email', $data['email'])->first();
+
+        if (!$user || !Hash::check($data['password'], $user->password)) {
+            return response()->json([
+                'message' => 'Login failed.',
+                'errors' => [
+                    'credential' => 'Invalid credentials'
+                ]
+            ], 401);
+        }
+
+        $token = $user->createToken($user->email)->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful.',
+            'data' => [
+                'user' => new UserResource($user),
+                'accessToken' => $token
+            ]
+        ]);
     }
 }
