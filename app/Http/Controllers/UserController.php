@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,9 @@ class UserController extends Controller
 
         $data['password'] = Hash::make($data['password']);
         $user = User::create($data);
+
+        $readerRole = Role::where('name', 'reader')->first();
+        $user->roles()->attach($readerRole);
 
         return response()->json([
             'message' => 'User registered Successfully.',
@@ -62,7 +66,7 @@ class UserController extends Controller
                 ->where('name', 'like', "%{$search}")
                 ->orWhere('email', 'like', "%{$search}");
         })
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->paginate($per_page, ['*'], 'page', $page);
 
         $result = UserResource::collection($users)->response()->getData();

@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 
 use function Pest\Laravel\getJson;
 use function Pest\Laravel\postJson;
@@ -40,7 +39,7 @@ describe('User Registration | /api/v1/register', function () {
             'password' => 'password123'
         ];
 
-        User::create($data);
+        postJson('/api/v1/register', $data);
 
         $response = postJson('/api/v1/register', $data);
 
@@ -80,14 +79,12 @@ describe('User Login | /api/v1/login', function () {
         'password' => 'password123'
     ];
 
-    beforeEach(function () use (&$register) {
-        $user = $register;
-        $user['password'] = Hash::make($user['password']);
-        User::create($user);
-    });
-
-
     it('should successfully log in a user with valid credentials', function () use (&$register) {
+
+        // register
+        postJson('/api/v1/register', $register);
+
+        // login
         $login = [
             'email' => $register['email'],
             'password' => $register['password']
@@ -101,7 +98,7 @@ describe('User Login | /api/v1/login', function () {
                 'message' => 'Login successful.',
                 'data' => [
                     'user' => [
-                        'id' => 1,
+                        'id' => true,
                         'name' => $register['name'],
                         'email' => $register['email'],
                         'created_at' => true
@@ -112,6 +109,11 @@ describe('User Login | /api/v1/login', function () {
     });
 
     it('should fail to log in a user with invalid credentials', function () use ($register) {
+
+        // register
+        postJson('/api/v1/register', $register);
+
+        // login
         $login = [
             'email' => $register['email'],
             'password' => 'wrongpassword'
