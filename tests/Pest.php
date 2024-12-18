@@ -11,8 +11,10 @@
 |
 */
 
+use function Pest\Laravel\postJson;
+
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
 /*
@@ -41,7 +43,31 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function validRegisterUserData(): array
 {
-    // ..
+    return [
+        'name' => 'user test',
+        'email' => 'usertest@mail.com',
+        'password' => 'password123'
+    ];
+}
+
+function loginUserData(array $data): array
+{
+    return [
+        'email' => $data['email'],
+        'password' => $data['password']
+    ];
+}
+
+function createAndLoginUser(): array
+{
+    $userData = validRegisterUserData();
+
+    postJson('/api/v1/register', $userData);
+
+    $response = postJson('/api/v1/login', loginUserData($userData));
+    $response->assertStatus(200);
+
+    return $response->json('data');
 }

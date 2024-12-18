@@ -11,13 +11,7 @@ uses(RefreshDatabase::class);
 describe('User Registration | /api/v1/register', function () {
 
     it('should successfully register a user with valid data', function () {
-        $data = [
-            'name' =>  'user test',
-            'email' => 'usertest@mail.com',
-            'password' => 'password123'
-        ];
-
-        $response = postJson('/api/v1/register', $data);
+        $response = postJson('/api/v1/register', validRegisterUserData());
 
         $response
             ->assertStatus(201)
@@ -33,15 +27,10 @@ describe('User Registration | /api/v1/register', function () {
     });
 
     it('should fail to register a user when the email is already taken', function () {
-        $data = [
-            'name' =>  'user test',
-            'email' => 'usertest@mail.com',
-            'password' => 'password123'
-        ];
 
-        postJson('/api/v1/register', $data);
+        postJson('/api/v1/register', validRegisterUserData());
 
-        $response = postJson('/api/v1/register', $data);
+        $response = postJson('/api/v1/register', validRegisterUserData());
 
         $response
             ->assertStatus(422)
@@ -54,9 +43,8 @@ describe('User Registration | /api/v1/register', function () {
     });
 
     it('should fail to register a user when required fields are missing', function () {
-        $data = [];
 
-        $response = postJson('/api/v1/register', $data);
+        $response = postJson('/api/v1/register', []);
 
         $response
             ->assertStatus(422)
@@ -73,24 +61,14 @@ describe('User Registration | /api/v1/register', function () {
 
 
 describe('User Login | /api/v1/login', function () {
-    $register = [
-        'name' => 'user test',
-        'email' => 'usertest@mail.com',
-        'password' => 'password123'
-    ];
 
-    it('should successfully log in a user with valid credentials', function () use (&$register) {
+    it('should successfully log in a user with valid credentials', function () {
 
         // register
-        postJson('/api/v1/register', $register);
+        $registerData = validRegisterUserData();
+        postJson('/api/v1/register', $registerData);
 
-        // login
-        $login = [
-            'email' => $register['email'],
-            'password' => $register['password']
-        ];
-
-        $response = postJson('/api/v1/login', $login);
+        $response = postJson('/api/v1/login', loginUserData($registerData));
 
         $response
             ->assertStatus(200)
@@ -99,8 +77,8 @@ describe('User Login | /api/v1/login', function () {
                 'data' => [
                     'user' => [
                         'id' => true,
-                        'name' => $register['name'],
-                        'email' => $register['email'],
+                        'name' => $registerData['name'],
+                        'email' => $registerData['email'],
                         'created_at' => true
                     ],
                     'accessToken' => true
@@ -108,18 +86,17 @@ describe('User Login | /api/v1/login', function () {
             ]);
     });
 
-    it('should fail to log in a user with invalid credentials', function () use ($register) {
+    it('should fail to log in a user with invalid credentials', function () {
 
         // register
-        postJson('/api/v1/register', $register);
+        postJson('/api/v1/register', validRegisterUserData());
 
-        // login
-        $login = [
-            'email' => $register['email'],
+        $invalidLogin = [
+            'email' => validRegisterUserData()['email'],
             'password' => 'wrongpassword'
         ];
 
-        $response = postJson('/api/v1/login', $login);
+        $response = postJson('/api/v1/login', $invalidLogin);
 
         $response
             ->assertStatus(401)
@@ -133,10 +110,20 @@ describe('User Login | /api/v1/login', function () {
 });
 
 describe('User List | /api/v1/users', function () {
-    it('should return paginated user list', function () {
-        User::factory(15)->create();
 
+    it('should require authentication to access the user list', function () {
         $response = getJson('/api/v1/users');
+
+        $response->assertStatus(401)
+            ->assertJsonPath('message', 'Unauthenticated.');
+    });
+
+    it('should return paginated user list', function () {
+        $accessToken = createAndLoginUser()['accessToken'];
+
+        User::factory(14)->create();
+
+        $response = getJson('/api/v1/users', ['Authorization' => "Bearer {$accessToken}"]);
 
         $response
             ->assertStatus(200)
@@ -151,10 +138,13 @@ describe('User List | /api/v1/users', function () {
     });
 
     it('should filter users by search query', function () {
+        $accessToken = createAndLoginUser()['accessToken'];
+
+
         User::factory()->create(['name' => 'user test alpha']);
         User::factory()->create(['name' => 'user test beta']);
 
-        $response = getJson('/api/v1/users?search=alpha');
+        $response = getJson('/api/v1/users?search=alpha', ['Authorization' => "Bearer {$accessToken}"]);
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
