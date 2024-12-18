@@ -87,4 +87,20 @@ class UserController extends Controller
             'meta' => $result->meta,
         ]);
     }
+
+    public function show($id): JsonResponse
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'User retrieved successfully.',
+            'data' => new UserResource($user)
+        ]);
+    }
 }

@@ -140,14 +140,59 @@ describe('User List | /api/v1/users', function () {
     it('should filter users by search query', function () {
         $accessToken = createAndLoginUser()['accessToken'];
 
+        $users = User::factory(10)->create();
+        $user = $users[4];
 
-        User::factory()->create(['name' => 'user test alpha']);
-        User::factory()->create(['name' => 'user test beta']);
-
-        $response = getJson('/api/v1/users?search=alpha', ['Authorization' => "Bearer {$accessToken}"]);
+        $response = getJson('/api/v1/users?search=' . $user['name'], ['Authorization' => "Bearer {$accessToken}"]);
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.name', 'user test alpha');
+            ->assertJsonPath('data.0.name', $user['name']);
+    });
+});
+
+describe('User Detail | /api/v1/users/${id}', function () {
+
+    it('should require authentication to access the user detail', function () {
+
+        $response = getJson('/api/v1/users/1');
+
+        $response->assertStatus(401)
+            ->assertJsonPath('message', 'Unauthenticated.');
+    });
+
+    it('should fetch single user by ID', function () {
+        $accessToken = createAndLoginUser()['accessToken'];
+
+        $users = User::factory(10)->create();
+        $user = $users->first();
+
+        $response = getJson('/api/v1/users/' . $user['id'], ['Authorization' => "Bearer {$accessToken}"]);
+
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'message' => 'User retrieved successfully.',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                    'created_at' => $user['created_at']
+                ]
+            ]);
+    });
+
+    it('should return 404 if user is not found', function () {
+        $actingUser = createAndLoginUser();
+        $accessToken = $actingUser['accessToken'];
+        $notFoundId = $actingUser['user']['id'] + 1;
+
+        $response = getJson('/api/v1/users/' . $notFoundId, ['Authorization' => "Bearer {$accessToken}"]);
+
+        $response
+            ->assertStatus(404)
+            ->assertJson([
+                'message' => 'User not found.',
+            ]);
     });
 });
