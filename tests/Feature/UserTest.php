@@ -11,6 +11,8 @@ uses(RefreshDatabase::class);
 describe('User Registration | /api/v1/register', function () {
 
     it('should successfully register a user with valid data', function () {
+        setupDatabase();
+
         $response = postJson('/api/v1/register', validRegisterUserData());
 
         $response
@@ -18,10 +20,11 @@ describe('User Registration | /api/v1/register', function () {
             ->assertJson([
                 'message' => 'User registered Successfully.',
                 'data' => [
-                    'id' => 1,
+                    'id' => true,
                     'name' => 'user test',
                     'email' => 'usertest@mail.com',
                     'created_at' => true,
+                    'roles' => ['reader']
                 ]
             ]);
     });
@@ -64,6 +67,8 @@ describe('User Login | /api/v1/login', function () {
 
     it('should successfully log in a user with valid credentials', function () {
 
+        setupDatabase();
+
         // register
         $registerData = validRegisterUserData();
         postJson('/api/v1/register', $registerData);
@@ -79,7 +84,8 @@ describe('User Login | /api/v1/login', function () {
                         'id' => true,
                         'name' => $registerData['name'],
                         'email' => $registerData['email'],
-                        'created_at' => true
+                        'created_at' => true,
+                        'roles' => ['reader']
                     ],
                     'accessToken' => true
                 ]
@@ -119,6 +125,9 @@ describe('User List | /api/v1/users', function () {
     });
 
     it('should return paginated user list', function () {
+        // register 5 user
+        setupDatabase();
+
         $accessToken = createAndLoginUser()['accessToken'];
 
         User::factory(14)->create();
@@ -129,15 +138,17 @@ describe('User List | /api/v1/users', function () {
             ->assertStatus(200)
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'name', 'email', 'created_at']
+                    '*' => ['id', 'name', 'email', 'created_at', 'roles']
                 ],
                 'links',
                 'meta'
             ])
-            ->assertJsonPath('meta.total', 15);
+            ->assertJsonPath('meta.total', 20);
     });
 
     it('should filter users by search query', function () {
+        setupDatabase();
+
         $accessToken = createAndLoginUser()['accessToken'];
 
         $users = User::factory(10)->create();
@@ -162,12 +173,15 @@ describe('User Detail | /api/v1/users/${id}', function () {
     });
 
     it('should fetch single user by ID', function () {
+        setupDatabase();
+
         $accessToken = createAndLoginUser()['accessToken'];
 
-        $users = User::factory(10)->create();
-        $user = $users->first();
+        User::factory(10)->create();
 
-        $response = getJson('/api/v1/users/' . $user['id'], ['Authorization' => "Bearer {$accessToken}"]);
+        $user = User::first();
+
+        $response = getJson('/api/v1/users/' . $user->id, ['Authorization' => "Bearer {$accessToken}"]);
 
         $response
             ->assertStatus(200)
@@ -175,9 +189,10 @@ describe('User Detail | /api/v1/users/${id}', function () {
                 'message' => 'User retrieved successfully.',
                 'data' => [
                     'id' => $user->id,
-                    'name' => $user['name'],
-                    'email' => $user['email'],
-                    'created_at' => $user['created_at']
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'created_at' => $user->created_at,
+                    'roles' => $user->roles->pluck('name')->toArray()
                 ]
             ]);
     });

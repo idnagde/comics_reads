@@ -18,7 +18,8 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'created_at' => $this->created_at->toDateTimeString()
+            'created_at' => $this->created_at->toDateTimeString(),
+            'roles' => $this->roles->pluck('name')
         ];
     }
 }

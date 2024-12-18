@@ -11,6 +11,8 @@
 |
 */
 
+use Illuminate\Support\Facades\Artisan;
+
 use function Pest\Laravel\postJson;
 
 pest()->extend(Tests\TestCase::class)
@@ -42,6 +44,11 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+
+function setupDatabase(): void
+{
+    Artisan::call('db:seed', ['--class' => 'DatabaseSetupSeeder']);
+}
 
 function validRegisterUserData(): array
 {
