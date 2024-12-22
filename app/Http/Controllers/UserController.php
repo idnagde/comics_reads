@@ -20,7 +20,7 @@ class UserController extends Controller
         $data['password'] = Hash::make($data['password']);
         $user = User::create($data);
 
-        $readerRole = Role::where('name', 'reader')->first();
+        $readerRole = Role::firstOrCreate(['name' => 'reader']);
         $user->roles()->attach($readerRole);
 
         return response()->json([

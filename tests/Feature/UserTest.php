@@ -11,7 +11,6 @@ uses(RefreshDatabase::class);
 describe('User Registration | /api/v1/register', function () {
 
     it('should successfully register a user with valid data', function () {
-        setupDatabase();
 
         $response = postJson('/api/v1/register', validRegisterUserData());
 
@@ -66,8 +65,6 @@ describe('User Registration | /api/v1/register', function () {
 describe('User Login | /api/v1/login', function () {
 
     it('should successfully log in a user with valid credentials', function () {
-
-        setupDatabase();
 
         // register
         $registerData = validRegisterUserData();
@@ -125,9 +122,8 @@ describe('User List | /api/v1/users', function () {
     });
 
     it('should return paginated user list', function () {
-        // register 5 user
-        setupDatabase();
 
+        // register 1 user & login
         $accessToken = createAndLoginUser()['accessToken'];
 
         User::factory(14)->create();
@@ -143,11 +139,10 @@ describe('User List | /api/v1/users', function () {
                 'links',
                 'meta'
             ])
-            ->assertJsonPath('meta.total', 20);
+            ->assertJsonPath('meta.total', 15);
     });
 
     it('should filter users by search query', function () {
-        setupDatabase();
 
         $accessToken = createAndLoginUser()['accessToken'];
 
@@ -173,7 +168,6 @@ describe('User Detail | /api/v1/users/${id}', function () {
     });
 
     it('should fetch single user by ID', function () {
-        setupDatabase();
 
         $accessToken = createAndLoginUser()['accessToken'];
 
