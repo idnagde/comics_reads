@@ -103,4 +103,23 @@ class UserController extends Controller
             'data' => new UserResource($user)
         ]);
     }
+
+    public function registerAsAuthor(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->roles()->where('name', 'author')->exists()) {
+            return response()->json([
+                'message' => 'You are already an author.'
+            ], 400);
+        }
+
+        $authorRole = Role::firstOrCreate(['name' => 'author']);
+        $user->roles()->attach($authorRole);
+
+        return response()->json([
+            'message' => 'Successfully registered as an author.',
+            'data' => new UserResource($user)
+        ]);
+    }
 }

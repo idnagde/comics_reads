@@ -45,11 +45,6 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function setupDatabase(): void
-{
-    Artisan::call('db:seed', ['--class' => 'DatabaseSetupSeeder']);
-}
-
 function validRegisterUserData(): array
 {
     return [
@@ -67,14 +62,32 @@ function loginUserData(array $data): array
     ];
 }
 
-function createAndLoginUser(): array
+function createAndLoginUser(bool $assignAuthorRole = false): array
 {
     $userData = validRegisterUserData();
 
-    postJson('/api/v1/register', $userData);
+    // Register user
+    $registerResponse = postJson('/api/v1/register', $userData);
+    $registerResponse->assertStatus(201);
 
-    $response = postJson('/api/v1/login', loginUserData($userData));
-    $response->assertStatus(200);
+    // Login user
+    $loginResponse = postJson('/api/v1/login', loginUserData($userData));
+    $loginResponse->assertStatus(200);
 
-    return $response->json('data');
+    $user = $loginResponse->json('data.user');
+    $accessToken = $loginResponse->json('data.accessToken');
+
+    // Assign author role if needed
+    if ($assignAuthorRole && $accessToken) {
+        $registerAuthorResponse = postJson('/api/v1/register-as-author', [], [
+            'Authorization' => "Bearer {$accessToken}",
+        ]);
+
+        $registerAuthorResponse->assertStatus(200);
+    }
+
+    return [
+        'user' => $user,
+        'accessToken' => $accessToken,
+    ];
 }

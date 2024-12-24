@@ -192,9 +192,9 @@ describe('User Detail | /api/v1/users/${id}', function () {
     });
 
     it('should return 404 if user is not found', function () {
-        $actingUser = createAndLoginUser();
-        $accessToken = $actingUser['accessToken'];
-        $notFoundId = $actingUser['user']['id'] + 1;
+        $login = createAndLoginUser();
+        $accessToken = $login['accessToken'];
+        $notFoundId = $login['user']['id'] + 1;
 
         $response = getJson('/api/v1/users/' . $notFoundId, ['Authorization' => "Bearer {$accessToken}"]);
 
@@ -202,6 +202,55 @@ describe('User Detail | /api/v1/users/${id}', function () {
             ->assertStatus(404)
             ->assertJson([
                 'message' => 'User not found.',
+            ]);
+    });
+});
+
+describe('Register As Author | /api/v1/register-as-author', function () {
+
+    it('should successfully register as an author', function () {
+        $login = createAndLoginUser();
+        $accessToken = $login['accessToken'];
+        $actingUser = $login['user'];
+
+        $response = postJson('/api/v1/register-as-author', [], ['Authorization' => "Bearer {$accessToken}"]);
+
+        $response
+            ->assertStatus(200)
+            ->assertJson([
+                'message' => 'Successfully registered as an author.',
+                'data' => [
+                    'id' => $actingUser['id'],
+                    'name' => $actingUser['name'],
+                    'email' => $actingUser['email'],
+                    'created_at' => $actingUser['created_at'],
+                    'roles' => ['reader', 'author'],
+                ]
+            ]);
+    });
+
+    it('should fail if already an author', function () {
+        $login = createAndLoginUser();
+        $accessToken = $login['accessToken'];
+
+        postJson('/api/v1/register-as-author', [], ['Authorization' => "Bearer {$accessToken}"]);
+
+        $response = postJson('/api/v1/register-as-author', [], ['Authorization' => "Bearer {$accessToken}"]);
+
+        $response
+            ->assertStatus(400)
+            ->assertJson([
+                'message' => 'You are already an author.'
+            ]);
+    });
+
+    it('should fail if unauthenticated', function () {
+        $response = postJson('/api/v1/register-as-author');
+
+        $response
+            ->assertStatus(401)
+            ->assertJson([
+                'message' => 'Unauthenticated.'
             ]);
     });
 });

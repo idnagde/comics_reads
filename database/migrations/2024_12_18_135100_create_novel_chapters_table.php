@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('novel_chapters', function (Blueprint $table) {
             $table->id();
             $table->foreignId('novel_id')->constrained()->onDelete('cascade');
+            $table->integer('chapter_number');
             $table->string('title');
             $table->text('content');
             $table->timestamps();
+
+            $table->unique(['novel_id', 'chapter_number']);
         });
     }
 
