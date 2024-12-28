@@ -23,7 +23,9 @@ class NovelStoreRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'synopsis' => ['required', 'string']
+            'synopsis' => ['required', 'string'],
+            'genres' => ['required', 'array', 'min:1', 'max:3'],
+            'genres.*' => ['exists:genres,id'],
         ];
     }
 }

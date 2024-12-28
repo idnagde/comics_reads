@@ -13,6 +13,12 @@ class Novel extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function genres()
+    {
+        return $this->belongsToMany(Genre::class, 'genre_novel');
+    }
+
+
     public function chapters()
     {
         return $this->hasMany(Chapter::class);

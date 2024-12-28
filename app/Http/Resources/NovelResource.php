@@ -17,6 +17,9 @@ class NovelResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'genres' => $this->whenLoaded('genres', function() {
+                return $this->genres->pluck('name');
+            }),
             'synopsis' => $this->synopsis,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

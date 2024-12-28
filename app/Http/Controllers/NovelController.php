@@ -6,7 +6,6 @@ use App\Http\Requests\NovelStoreRequest;
 use App\Http\Resources\NovelResource;
 use App\Models\Novel;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class NovelController extends Controller
 {
@@ -19,6 +18,10 @@ class NovelController extends Controller
       'title' => $data['title'],
       'synopsis' => $data['synopsis']
     ]);
+
+    $novel->genres()->attach($data['genres']);
+
+    $novel->load('genres');
 
     return response()->json([
       'message' => 'Novel created successfully.',
